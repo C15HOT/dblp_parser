@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from starlette import status
 
-from app.libs.handlers.aiohttp import get_author_api_json
+from app.libs.handlers.aiohttp import get_author_api_json, author_find_sa
 
 
 dblp_router = APIRouter(tags=['dbpl'])
@@ -9,10 +9,22 @@ dblp_router = APIRouter(tags=['dbpl'])
 
 @dblp_router.get(path='/get_author',
                     summary='')
-async def get_journal_info(first_name: str,
-                           last_name: str):
+async def get_journal_info(name: str):
+    if name.find(' '):
+        name = name.replace(" ","+")
+    results = await get_author_api_json(name=name)
+    if not results:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Authors not found")
+    return results
 
-    results = await get_author_api_json(first_name=first_name, last_name=last_name)
+
+# https://dblp.org/search?q=specom
+@dblp_router.get(
+    path='/get_author_subject_area',
+    summary=''
+)
+async def get_author_subject_area(query:str):
+    results = await author_find_sa(query=query)
     if not results:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Authors not found")
     return results
